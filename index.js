@@ -18,17 +18,45 @@ const rooms = {};
 
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
-  socket.on("join_room", async (data) => {
-    if (rooms[data.room]) {
-      await socket.join(data.room);
-      console.log("room is available");
+
+  socket.on("check_room", (data) => {
+    const { room } = data;
+    const roomExists = rooms[room];
+    console.log("here in check room", room);
+
+    if (roomExists) {
+      socket.emit("generate_new_roomid");
     } else {
+      console.log("room is valid");
+      socket.emit("roomid_is_valid", { room });
+    }
+  });
+
+  socket.on("is_room_exists", (data) => {
+    const { room } = data;
+    const roomExists = rooms[room];
+    console.log("here in is room exists", room);
+
+    if (roomExists) {
+      socket.emit("room_exists");
+    } else {
+      console.log("room is valid");
+      socket.emit("room_not_found", { room });
+    }
+  });
+
+  socket.on("join_room", async (data) => {
+    await socket.join(data.room);
+    if (rooms[data.room])
+      console.log("room is available");
+    else {
+      console.log("creating room");
       rooms[data.room] = {
         people: []
-      }
-      console.log("room is not available, creating new room");
+      };
     }
-    console.log(`User with ID: ${socket.id} joined room: ${data.room}`);
+
+    console.log(`User with ID: ${socket.id} name: ${data.username} joined room: ${data.room}`);
 
     const newPerson = {
       socketId: socket.id,
@@ -38,6 +66,7 @@ io.on("connection", (socket) => {
     };
 
     rooms[data.room].people.push(newPerson);
+
     if (rooms[data.room].people.length === 1) {
       newPerson.isTurn = true;
     }
@@ -45,15 +74,31 @@ io.on("connection", (socket) => {
     rooms[data.room].people.forEach((p) => console.log(p.name, p.isTurn));
 
     io.to(data.room).emit("peopleInRoom", rooms[data.room].people);
-    socket.to(data.room).emit("receive_message", {
+    socket.to(data.room).emit("welcome_message", {
       message: `User ${data.username} has joined the room.`,
       author: "System",
     });
   });
 
   socket.on("send_message", (data) => {
-    console.log(data.message, data.author)
+    console.log(data.message, data.socketId)
     const { room } = data;
+    const roomData = rooms[room];
+    let username;
+    if (roomData) {
+      const currentIndex = roomData.people.findIndex((p) => p.isTurn);
+      username = roomData.people[currentIndex].name;
+    }
+    socket.to(data.room).emit("receive_message", {
+      name: username,
+      message: data.message
+    });
+    io.to(data.room).emit("peopleInRoom", rooms[room].people);
+  });
+
+  socket.on("change_turn", (data) => {
+    const { room } = data;
+    console.log("changing turn");
     const roomData = rooms[room];
     if (roomData) {
       const currentIndex = roomData.people.findIndex((p) => p.isTurn);
@@ -64,9 +109,13 @@ io.on("connection", (socket) => {
       rooms[room] = roomData;
     }
     rooms[room].people.forEach((p) => console.log(p.name, p.isTurn));
-    socket.to(data.room).emit("receive_message", data);
+    socket.emit("change_turn");
     io.to(data.room).emit("peopleInRoom", rooms[room].people);
   });
+
+  socket.on("submit", (data) => {
+
+  })
 
   socket.on("disconnect", () => {
     let roomId;
