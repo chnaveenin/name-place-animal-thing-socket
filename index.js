@@ -40,7 +40,6 @@ io.on("connection", (socket) => {
     if (roomExists) {
       socket.emit("room_exists");
     } else {
-      console.log("room is valid");
       socket.emit("room_not_found", { room });
     }
   });
@@ -101,7 +100,6 @@ io.on("connection", (socket) => {
       name: username,
       alphabet: data.alphabet
     });
-    io.to(data.room).emit("peopleInRoom", rooms[room]?.people);
   });
 
   socket.on("change_turn", (data) => {
@@ -124,19 +122,22 @@ io.on("connection", (socket) => {
   socket.on("submit", (data) => {
     const {room, submission} = data;
     rooms[room].submittedCount += 1;
-    rooms[room].submission.name = submission.name;
-    rooms[room].submission.place = submission.place;
-    rooms[room].submission.animal = submission.animal;
-    rooms[room].submission.thing = submission.thing;
-
+    for (const [key, value] of Object.entries(rooms)) {
+      const index = value.people.findIndex((person) => person.socketId === socket.id);
+      if (index !== -1) {
+        rooms[room].people[index].submission = submission;
+        break;
+      }
+    }
     console.log(rooms[room].submittedCount);
 
     if (rooms[room].submittedCount === rooms[room].people.length) {
+
       // calculate score
+
       console.log("final submit");
       rooms[room].submittedCount = 0;
       socket.emit("final_submit");
-      io.to(data.room).emit("peopleInRoom", rooms[room].people);
     } else if (rooms[room].submittedCount === 1) {
       console.log("first submit");
       socket.to(room).emit("first_submit");
