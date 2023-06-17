@@ -17,60 +17,67 @@ const io = new Server(server, {
 const rooms = {};
 
 const calculateScore = (room) => {
-  // is name
-  // is animal
-  // is place
-  // is thing
-  const checkMultipleName = {};
-  const checkMultiplePlace = {};
-  const checkMultipleAnimal = {};
-  const checkMultipleThing = {};
+  const categoryCounts = {
+    name: {},
+    animal: {},
+    place: {},
+    thing: {},
+  };
 
   const roomPeople = rooms[room].people;
   const alphabet = rooms[room].currentAlphabet;
 
   roomPeople.forEach((p) => {
-    p.submission.name[0] === alphabet && (checkMultipleName[p.submission.name] ? 
-      checkMultiple[p.submission.name] += 1 
-      : 
-      checkMultiple[p.submission.name] = 1);
+    const { name, animal, place, thing } = p.submission;
 
-    console.log("name", checkMultiple);
-    
-    p.submission.place[0] === alphabet && (checkMultiplePlace[p.submission.place] ? 
-      checkMultiple[p.submission.place] += 1 
-      : 
-      checkMultiple[p.submission.place] = 1);
+    if (name[0] === alphabet) {
+      categoryCounts.name[name] = (categoryCounts.name[name] || 0) + 1;
+    }
 
-    console.log("place", checkMultiple);
+    if (animal[0] === alphabet) {
+      categoryCounts.animal[animal] = (categoryCounts.animal[animal] || 0) + 1;
+    }
 
+    if (place[0] === alphabet) {
+      categoryCounts.place[place] = (categoryCounts.place[place] || 0) + 1;
+    }
 
-    p.submission.animal[0] === alphabet && (checkMultipleAnimal[p.submission.animal] ? 
-      checkMultiple[p.submission.animal] += 1 
-      : 
-      checkMultiple[p.submission.animal] = 1);
-
-    console.log("animal", checkMultiple);
-
-    p.submission.thing[0] === alphabet && (checkMultipleThing[p.submission.thing] ? 
-      checkMultiple[p.submission.thing] += 1 
-      : 
-      checkMultiple[p.submission.thing] = 1);
-
-    console.log("thing", checkMultiple);
-  })
-
-  console.log(checkMultiple);
+    if (thing[0] === alphabet) {
+      categoryCounts.thing[thing] = (categoryCounts.thing[thing] || 0) + 1;
+    }
+  });
 
   roomPeople.forEach((p) => {
-    checkMultipleName[p.submission.name]     && (checkMultipleName[p.submission.name]     > 1 ? p.score += 5 : p.score += 10);
-    checkMultiplePlace[p.submission.place]   && (checkMultiplePlace[p.submission.place]   > 1 ? p.score += 5 : p.score += 10);
-    checkMultipleAnimal[p.submission.animal] && (checkMultipleAnimal[p.submission.animal] > 1 ? p.score += 5 : p.score += 10);
-    checkMultipleThing[p.submission.thing]   && (checkMultipleThing[p.submission.thing]   > 1 ? p.score += 5 : p.score += 10);
+    const { name, animal, place, thing } = p.submission;
+
+    if (categoryCounts.name[name] > 1) {
+      p.score += 5;
+    } else {
+      p.score += 10;
+    }
+
+    if (categoryCounts.animal[animal] > 1) {
+      p.score += 5;
+    } else {
+      p.score += 10;
+    }
+
+    if (categoryCounts.place[place] > 1) {
+      p.score += 5;
+    } else {
+      p.score += 10;
+    }
+
+    if (categoryCounts.thing[thing] > 1) {
+      p.score += 5;
+    } else {
+      p.score += 10;
+    }
   });
 
   rooms[room].people = roomPeople;
 };
+
 
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
