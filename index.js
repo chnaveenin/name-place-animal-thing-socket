@@ -52,7 +52,9 @@ io.on("connection", (socket) => {
     else {
       console.log("creating room");
       rooms[data.room] = {
-        people: []
+        people: [],
+        submittedCount: 0,
+        currentAlphabet: ''
       };
     }
 
@@ -62,7 +64,13 @@ io.on("connection", (socket) => {
       socketId: socket.id,
       name: data.username,
       score: 0,
-      isTurn: false
+      isTurn: false,
+      submission: {
+        name: '',
+        place: '',
+        animal: '',
+        thing: ''
+      }
     };
 
     rooms[data.room].people.push(newPerson);
@@ -80,8 +88,8 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("send_message", (data) => {
-    console.log(data.message, data.room)
+  socket.on("send_alphabet", (data) => {
+    console.log(data.alphabet, data.room)
     const { room } = data;
     const roomData = rooms[room];
     let username;
@@ -89,11 +97,11 @@ io.on("connection", (socket) => {
       const currentIndex = roomData.people.findIndex((p) => p.isTurn);
       username = roomData.people[currentIndex].name;
     }
-    socket.to(data.room).emit("receive_message", {
+    socket.to(data.room).emit("receive_alphabet", {
       name: username,
-      message: data.message
+      alphabet: data.alphabet
     });
-    io.to(data.room).emit("peopleInRoom", rooms[room].people);
+    io.to(data.room).emit("peopleInRoom", rooms[room]?.people);
   });
 
   socket.on("change_turn", (data) => {
@@ -109,12 +117,30 @@ io.on("connection", (socket) => {
       rooms[room] = roomData;
     }
     rooms[room]?.people.forEach((p) => console.log(p.name, p.isTurn));
-    socket.to(room).emit("change_turn");
+    io.to(room).emit("change_turn");
     io.to(data.room).emit("peopleInRoom", rooms[room].people);
   });
 
   socket.on("submit", (data) => {
+    const {room, submission} = data;
+    rooms[room].submittedCount += 1;
+    rooms[room].submission.name = submission.name;
+    rooms[room].submission.place = submission.place;
+    rooms[room].submission.animal = submission.animal;
+    rooms[room].submission.thing = submission.thing;
 
+    console.log(rooms[room].submittedCount);
+
+    if (rooms[room].submittedCount === rooms[room].people.length) {
+      // calculate score
+      console.log("final submit");
+      rooms[room].submittedCount = 0;
+      socket.emit("final_submit");
+      io.to(data.room).emit("peopleInRoom", rooms[room].people);
+    } else if (rooms[room].submittedCount === 1) {
+      console.log("first submit");
+      socket.to(room).emit("first_submit");
+    }
   })
 
   socket.on("disconnect", () => {
