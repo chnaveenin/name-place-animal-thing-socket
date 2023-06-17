@@ -16,6 +16,62 @@ const io = new Server(server, {
 
 const rooms = {};
 
+const calculateScore = (room) => {
+  // is name
+  // is animal
+  // is place
+  // is thing
+  const checkMultipleName = {};
+  const checkMultiplePlace = {};
+  const checkMultipleAnimal = {};
+  const checkMultipleThing = {};
+
+  const roomPeople = rooms[room].people;
+  const alphabet = rooms[room].currentAlphabet;
+
+  roomPeople.forEach((p) => {
+    p.submission.name[0] === alphabet && (checkMultipleName[p.submission.name] ? 
+      checkMultiple[p.submission.name] += 1 
+      : 
+      checkMultiple[p.submission.name] = 1);
+
+    console.log("name", checkMultiple);
+    
+    p.submission.place[0] === alphabet && (checkMultiplePlace[p.submission.place] ? 
+      checkMultiple[p.submission.place] += 1 
+      : 
+      checkMultiple[p.submission.place] = 1);
+
+    console.log("place", checkMultiple);
+
+
+    p.submission.animal[0] === alphabet && (checkMultipleAnimal[p.submission.animal] ? 
+      checkMultiple[p.submission.animal] += 1 
+      : 
+      checkMultiple[p.submission.animal] = 1);
+
+    console.log("animal", checkMultiple);
+
+    p.submission.thing[0] === alphabet && (checkMultipleThing[p.submission.thing] ? 
+      checkMultiple[p.submission.thing] += 1 
+      : 
+      checkMultiple[p.submission.thing] = 1);
+
+    console.log("thing", checkMultiple);
+  })
+
+  console.log(checkMultiple);
+
+  roomPeople.forEach((p) => {
+    checkMultipleName[p.submission.name]     && (checkMultipleName[p.submission.name]     > 1 ? p.score += 5 : p.score += 10);
+    checkMultiplePlace[p.submission.place]   && (checkMultiplePlace[p.submission.place]   > 1 ? p.score += 5 : p.score += 10);
+    checkMultipleAnimal[p.submission.animal] && (checkMultipleAnimal[p.submission.animal] > 1 ? p.score += 5 : p.score += 10);
+    checkMultipleThing[p.submission.thing]   && (checkMultipleThing[p.submission.thing]   > 1 ? p.score += 5 : p.score += 10);
+  });
+
+  rooms[room].people = roomPeople;
+};
+
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
@@ -96,9 +152,10 @@ io.on("connection", (socket) => {
       const currentIndex = roomData.people.findIndex((p) => p.isTurn);
       username = roomData.people[currentIndex].name;
     }
+    rooms[room].currentAlphabet = data.alphabet.toString();
     socket.to(data.room).emit("receive_alphabet", {
       name: username,
-      alphabet: data.alphabet
+      alphabet: data.alphabet.toUpperCase()
     });
   });
 
@@ -121,28 +178,36 @@ io.on("connection", (socket) => {
 
   socket.on("submit", (data) => {
     const {room, submission} = data;
-    rooms[room].submittedCount += 1;
-    for (const [key, value] of Object.entries(rooms)) {
-      const index = value.people.findIndex((person) => person.socketId === socket.id);
-      if (index !== -1) {
-        rooms[room].people[index].submission = submission;
-        break;
+    if (rooms[room]) {
+      rooms[room].submittedCount += 1;
+      for (const [key, value] of Object.entries(rooms)) {
+        const index = value.people.findIndex((person) => person.socketId === socket.id);
+        if (index !== -1) {
+          rooms[room].people[index].submission = submission;
+          break;
+        }
+      }
+      console.log(rooms[room].submittedCount);
+
+      if (rooms[room].submittedCount === rooms[room].people.length) {
+
+        // calculate score
+
+          // part1: name place animal thing all start with given alphabet or not
+          // part2: check if its valid name, place, animal, thing or not
+          // part3: check if its matching with anyothers answers and update score
+
+        calculateScore(room);
+
+        console.log("final submit");
+        rooms[room].submittedCount = 0;
+        socket.emit("final_submit");
+      } else if (rooms[room].submittedCount === 1) {
+        console.log("first submit");
+        socket.to(room).emit("first_submit");
       }
     }
-    console.log(rooms[room].submittedCount);
-
-    if (rooms[room].submittedCount === rooms[room].people.length) {
-
-      // calculate score
-
-      console.log("final submit");
-      rooms[room].submittedCount = 0;
-      socket.emit("final_submit");
-    } else if (rooms[room].submittedCount === 1) {
-      console.log("first submit");
-      socket.to(room).emit("first_submit");
-    }
-  })
+  });
 
   socket.on("disconnect", () => {
     let roomId;
