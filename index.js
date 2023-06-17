@@ -81,7 +81,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send_message", (data) => {
-    console.log(data.message, data.socketId)
+    console.log(data.message, data.room)
     const { room } = data;
     const roomData = rooms[room];
     let username;
@@ -108,8 +108,8 @@ io.on("connection", (socket) => {
       });
       rooms[room] = roomData;
     }
-    rooms[room].people.forEach((p) => console.log(p.name, p.isTurn));
-    socket.emit("change_turn");
+    rooms[room]?.people.forEach((p) => console.log(p.name, p.isTurn));
+    socket.to(room).emit("change_turn");
     io.to(data.room).emit("peopleInRoom", rooms[room].people);
   });
 
