@@ -53,25 +53,25 @@ const calculateScore = (room) => {
     if (categoryCounts.name[name] > 1) {
       p.score += 5;
     } else {
-      p.score += 10;
+      if (name) p.score += 10;
     }
 
     if (categoryCounts.animal[animal] > 1) {
       p.score += 5;
     } else {
-      p.score += 10;
+      if (place) p.score += 10;
     }
 
     if (categoryCounts.place[place] > 1) {
       p.score += 5;
     } else {
-      p.score += 10;
+      if (animal) p.score += 10;
     }
 
     if (categoryCounts.thing[thing] > 1) {
       p.score += 5;
     } else {
-      p.score += 10;
+      if (thing) p.score += 10;
     }
   });
 
