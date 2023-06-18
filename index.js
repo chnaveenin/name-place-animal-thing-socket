@@ -16,69 +16,6 @@ const io = new Server(server, {
 
 const rooms = {};
 
-const calculateScore = (room) => {
-  const categoryCounts = {
-    name: {},
-    animal: {},
-    place: {},
-    thing: {},
-  };
-
-  const roomPeople = rooms[room].people;
-  const alphabet = rooms[room].currentAlphabet;
-
-  roomPeople.forEach((p) => {
-    const { name, animal, place, thing } = p.submission;
-
-    if (name[0] === alphabet) {
-      categoryCounts.name[name] = (categoryCounts.name[name] || 0) + 1;
-    }
-
-    if (animal[0] === alphabet) {
-      categoryCounts.animal[animal] = (categoryCounts.animal[animal] || 0) + 1;
-    }
-
-    if (place[0] === alphabet) {
-      categoryCounts.place[place] = (categoryCounts.place[place] || 0) + 1;
-    }
-
-    if (thing[0] === alphabet) {
-      categoryCounts.thing[thing] = (categoryCounts.thing[thing] || 0) + 1;
-    }
-  });
-
-  roomPeople.forEach((p) => {
-    const { name, animal, place, thing } = p.submission;
-
-    if (categoryCounts.name[name] > 1) {
-      p.score += 5;
-    } else {
-      if (name) p.score += 10;
-    }
-
-    if (categoryCounts.animal[animal] > 1) {
-      p.score += 5;
-    } else {
-      if (place) p.score += 10;
-    }
-
-    if (categoryCounts.place[place] > 1) {
-      p.score += 5;
-    } else {
-      if (animal) p.score += 10;
-    }
-
-    if (categoryCounts.thing[thing] > 1) {
-      p.score += 5;
-    } else {
-      if (thing) p.score += 10;
-    }
-  });
-
-  rooms[room].people = roomPeople;
-};
-
-
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
@@ -197,23 +134,26 @@ io.on("connection", (socket) => {
       console.log(rooms[room].submittedCount);
 
       if (rooms[room].submittedCount === rooms[room].people.length) {
-
-        // calculate score
-
-          // part1: name place animal thing all start with given alphabet or not
-          // part2: check if its valid name, place, animal, thing or not
-          // part3: check if its matching with anyothers answers and update score
-
-        calculateScore(room);
-
         console.log("final submit");
         rooms[room].submittedCount = 0;
-        socket.emit("final_submit");
-      } else if (rooms[room].submittedCount === 1) {
+        io.to(room).emit("calculate_score", rooms[room].people);
+      }
+      else if (rooms[room].submittedCount === 1) {
         console.log("first submit");
         socket.to(room).emit("first_submit");
       }
     }
+  });
+
+  socket.on("calculate_score", (data) => {
+    console.log("calculating score");
+    const {roomid, people} = data;
+    const roomPeople = rooms[roomid].people
+    if (rooms[roomid]) {
+      roomPeople.forEach((p, index) => p.score+=people[index].newScore);
+      rooms[roomid].people = roomPeople;
+    }
+    io.to(roomid).emit("calculated_score");
   });
 
   socket.on("disconnect", () => {
