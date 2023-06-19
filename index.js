@@ -196,7 +196,7 @@ io.on("connection", (socket) => {
       delete rooms[roomId];
     }
     if (rooms[roomId]) {
-      rooms[roomId]?.people.forEach((p) => console.log(p.name, p.isTurn));
+      rooms[roomId].people.forEach((p) => console.log(p.name, p.isTurn));
       socket.to(roomId).emit('peopleInRoom', rooms[roomId].people || []);
     }
   });
