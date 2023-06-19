@@ -121,6 +121,7 @@ io.on("connection", (socket) => {
     console.log("changing turn");
     const roomData = rooms[room];
     if (roomData) {
+      roomData.currentAlphabet = '';
       const currentIndex = roomData.people.findIndex((p) => p.isTurn);
       const nextIndex = (currentIndex + 1) % roomData.people.length;
       roomData.people.forEach((p, index) => {
