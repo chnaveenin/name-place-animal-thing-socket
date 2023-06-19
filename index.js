@@ -85,6 +85,18 @@ io.on("connection", (socket) => {
       message: `User ${data.username} has joined the room.`,
       author: "System",
     });
+
+    let username;
+    const roomData = rooms[data.room];
+    if (roomData) {
+      const currentIndex = roomData.people.findIndex((p) => p.isTurn);
+      username = roomData.people[currentIndex].name;
+    }
+
+    socket.emit("receive_alphabet", {
+      name: username,
+      alphabet: roomData.currentAlphabet.toUpperCase()
+    });
   });
 
   socket.on("send_alphabet", (data) => {
@@ -153,7 +165,7 @@ io.on("connection", (socket) => {
       roomPeople.forEach((p, index) => p.score+=people[index].newScore);
       rooms[roomid].people = roomPeople;
     }
-    io.to(roomid).emit("calculated_score");
+    socket.emit("calculated_score");
   });
 
   socket.on("disconnect", () => {
