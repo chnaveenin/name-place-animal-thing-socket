@@ -107,8 +107,9 @@ io.on("connection", (socket) => {
     if (roomData) {
       const currentIndex = roomData.people.findIndex((p) => p.isTurn);
       username = roomData.people[currentIndex].name;
+      rooms[room].currentAlphabet = data.alphabet.toString();
     }
-    rooms[room].currentAlphabet = data.alphabet.toString();
+
     socket.to(data.room).emit("receive_alphabet", {
       name: username,
       alphabet: data.alphabet.toUpperCase()
@@ -127,9 +128,11 @@ io.on("connection", (socket) => {
       });
       rooms[room] = roomData;
     }
-    rooms[room]?.people.forEach((p) => console.log(p.name, p.isTurn));
+    if (rooms[room]) {
+      rooms[room].people.forEach((p) => console.log(p.name, p.isTurn));
+      io.to(data.room).emit("peopleInRoom", rooms[room].people);
+    }
     io.to(room).emit("change_turn");
-    io.to(data.room).emit("peopleInRoom", rooms[room].people);
   });
 
   socket.on("submit", (data) => {
@@ -143,7 +146,6 @@ io.on("connection", (socket) => {
           break;
         }
       }
-      console.log(rooms[room].submittedCount);
 
       if (rooms[room].submittedCount === rooms[room].people.length) {
         console.log("final submit");
@@ -193,8 +195,10 @@ io.on("connection", (socket) => {
     if (roomId && rooms[roomId].people.length === 0) {
       delete rooms[roomId];
     }
-    rooms[roomId]?.people.forEach((p) => console.log(p.name, p.isTurn));
-    socket.to(roomId).emit('peopleInRoom', rooms[roomId]?.people || []);
+    if (rooms[roomId]) {
+      rooms[roomId]?.people.forEach((p) => console.log(p.name, p.isTurn));
+      socket.to(roomId).emit('peopleInRoom', rooms[roomId].people || []);
+    }
   });
 });
 
