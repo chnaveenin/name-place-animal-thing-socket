@@ -121,7 +121,6 @@ io.on("connection", (socket) => {
     console.log("changing turn");
     const roomData = rooms[room];
     if (roomData) {
-      roomData.currentAlphabet = '';
       const currentIndex = roomData.people.findIndex((p) => p.isTurn);
       const nextIndex = (currentIndex + 1) % roomData.people.length;
       roomData.people.forEach((p, index) => {
@@ -151,6 +150,7 @@ io.on("connection", (socket) => {
       if (rooms[room].submittedCount === rooms[room].people.length) {
         console.log("final submit");
         rooms[room].submittedCount = 0;
+        rooms[room].currentAlphabet = '';
         io.to(room).emit("calculate_score", rooms[room].people);
       }
       else if (rooms[room].submittedCount === 1) {
