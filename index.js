@@ -38,7 +38,7 @@ io.on("connection", (socket) => {
     console.log("here in is room exists", room);
 
     if (roomExists) {
-      socket.emit("room_exists");
+      socket.emit("room_exists", { room });
     } else {
       socket.emit("room_not_found", { room });
     }
@@ -203,6 +203,13 @@ io.on("connection", (socket) => {
     if (rooms[roomId]) {
       rooms[roomId].people.forEach((p) => console.log(p.name, p.isTurn));
       socket.to(roomId).emit('peopleInRoom', rooms[roomId].people || []);
+
+      if (rooms[roomId].submittedCount === rooms[roomId].people.length) {
+        console.log("final submit");
+        rooms[roomId].submittedCount = 0;
+        rooms[roomId].currentAlphabet = '';
+        io.to(roomId).emit("calculate_score", rooms[roomId].people);
+      }
     }
   });
 });
