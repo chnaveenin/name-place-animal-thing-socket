@@ -126,6 +126,7 @@ io.on("connection", (socket) => {
       roomData.people.forEach((p, index) => {
         p.isTurn = index === nextIndex;
       });
+      roomData.currentAlphabet = '';
       rooms[room] = roomData;
     }
     if (rooms[room]) {
@@ -165,7 +166,7 @@ io.on("connection", (socket) => {
     const {roomid, people} = data;
     const roomPeople = rooms[roomid].people
     if (rooms[roomid]) {
-      roomPeople.forEach((p, index) => p.score+=people[index].newScore);
+      roomPeople.forEach((p, index) => p.score+=(people[index].newScore ? people[index].newScore : 0));
       rooms[roomid].people = roomPeople;
     }
     socket.emit("calculated_score");
