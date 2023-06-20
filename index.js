@@ -192,7 +192,10 @@ io.on("connection", (socket) => {
         break;
       }
     }
-    console.log(`User with ID: ${socket.id} left room: ${roomId}`);
+    if (roomId)
+      console.log(`User with ID: ${socket.id} left room: ${roomId}`);
+    else 
+      console.log(`User disconnected with ID: ${socket.id}`);
 
     if (roomId && rooms[roomId].people.length === 0) {
       delete rooms[roomId];
